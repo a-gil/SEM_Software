@@ -1,5 +1,5 @@
-x_i = 100.                      #starting x position
-y_i = 35.
+x_0 = 100.                      #starting x position
+y_0 = 35.
 fov = 2.408                    #how many mm we'll move across
 x_n = 1                        #dummy variable
 
@@ -13,8 +13,8 @@ while x_n >= 0:                 #dummy variable used to get the while loop start
    # if x_n == 1:               #needed to create a local variable n
      #   n = 0
         
-    x_n = x_i - n*fov          #new x posistion
-    y_m = y_i - m*fov
+    x_n = x_0 - n*fov          #new x posistion
+    y_m = y_0 - m*fov
     n = n+1
                         
     if x_n < 0:                #once we reach neg x values, set x_n = 0.
@@ -36,4 +36,4 @@ coordinates = list(coords)
     
 #coords = np.transpose(coords) #transpose to get 1xn array instead of nx1 array?
 
-#print coordinates
+print coordinates
