@@ -36,4 +36,6 @@ coordinates = list(coords)
     
 #coords = np.transpose(coords) #transpose to get 1xn array instead of nx1 array?
 
-print coordinates
+#print coordinates
+
+print "NEW EDIT WILL THIS SHOW UP ON GIT AND GITHUB???"
