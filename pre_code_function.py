@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
+
 def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
     """Aight, so you choose your starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
     #x_0 is the starting x position
@@ -26,7 +28,7 @@ def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delt
     
     x_n = x_min + 1                             #dummy variable, may be removed if we make the sub while-->for
     
-    coords = ()                                 #empty tuple where we'll store the x vals
+    coords = []                                 #empty list where we'll store the x vals
         
     n = 0
     m = 0
@@ -46,27 +48,29 @@ def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delt
             y_m = y_max           
                 
                 
-        coords = coords + ((round(x_n, 3), round(y_m, 3)),)          #adds the calculated x_n, y_m to the list coord
+        coords = coords + [(round(x_n, 1), round(y_m, 1)),]          #adds the calculated x_n, y_m to the list coord
                 
         if y_m == y_max and x_n == x_min:                            #breaks the loop when we reach the bottom corner
             break
     ##########   
     ##########
     
-    #Now that we have the tuple, we can use it to assign the coordinates to the SEM
+    #Now that we have the list, we can use it to assign the coordinates to the SEM
     ##########
     ##########
-    i = 0                                       #define index
     
+    i = 0                                       #define a certain magical index
     while i < len(coords):
         x, y = coords[i]
         #feed x,y to SEM function that moves stage
         #call SEM function that will calculate the WD at this point
-        
-        
+        #let's say z = WD, but use a dummy function for testing
+        z = np.add(x,y)
+        coords.remove(coords[i])
+        coords.insert(i, (x,y,round(z, 1)))
+        i = i+1
     
     return coords
 
 coordinates = calc_coords(100, 35)
-#print coordinates
-    
+print coordinates
