@@ -2,15 +2,13 @@
 
 import numpy as np
 
-def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
+def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
     """Aight, so you choose your starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
     #x_0 is the starting x position
     #y_0 is the starting y position
     #mins and maxs be where we don't want the stage to go past
     #delta is the spacing between points.
     
-    #if x_0 > x_max or x_0 < x_min or y_0 > y_max or y_0 < y_min:
-    #    return 'Error: please ensure that the starting point is within sample range'
     if x_0 > x_max:
         return 'Error: input x is greater than maximum x-value'
     elif x_0 < x_min:
@@ -28,7 +26,7 @@ def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delt
     
     x_n = x_min + 1                             #dummy variable, may be removed if we make the sub while-->for
     
-    coords = []                                 #empty list where we'll store the x vals
+    coords = []                                 #empty list where we'll store the coordinates
         
     n = 0
     m = 0
@@ -72,5 +70,5 @@ def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delt
     
     return coords
 
-coordinates = calc_coords(100, 35)
+coordinates = func(102, -65)
 print coordinates
