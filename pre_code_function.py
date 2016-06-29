@@ -4,10 +4,10 @@
 #x_min = -2
 #y_min = -37
 
-def calc_coords(x_0, y_0, x_max = 102, y_max = 65, x_min = -2, y_min = -37, delta = 1.8):
-    """Aight, so you choose you're starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
-    #x_0 is our starting x position
-    #y_0 is our starting y position
+def calc_coords(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
+    """Aight, so you choose your starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
+    #x_0 is the starting x position
+    #y_0 is the starting y position
     #mins and maxs be where we don't want the stage to go past
     #delta is the spacing between points.
     
@@ -36,14 +36,14 @@ def calc_coords(x_0, y_0, x_max = 102, y_max = 65, x_min = -2, y_min = -37, delt
             y_m = y_max           
         
         
-        coords = coords + ((x_n,y_m),)          #adds the calculated x_n to the list coord
+        coords = coords + ((round(x_n, 3), round(y_m, 3)),)          #adds the calculated x_n to the list coord
         
         if y_m == y_max and x_n == x_min:       #break the loop when we reach the bottom corner
             break
         
     return coords
 
-print calc_coords(102, 65)
+print calc_coords(102, -65)
 
 
 
