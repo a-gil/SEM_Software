@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+#import sem
 
 def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
     """Aight, so you choose your starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
@@ -64,11 +65,14 @@ def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8
         #call SEM function that will calculate the WD at this point
         #let's say z = WD, but use a dummy function for testing
         z = np.add(x,y)
+        #sem.StgMoveTo(x, y)
+        #sem.AutoWD
+        #z = sem.GetWD
         coords.remove(coords[i])
         coords.insert(i, (x,y,round(z, 1)))
         i = i+1
     
     return coords
 
-coordinates = func(102, -65)
-print coordinates
+#coordinates = func(102, -65)
+#print coordinates
