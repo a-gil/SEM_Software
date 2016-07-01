@@ -3,11 +3,13 @@
 import numpy as np
 #import sem
 
-def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8):
+def func(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
     """Aight, so you choose your starting position by inputting different x_0 and y_0 values. Default values will be used unless otherwise specified."""        
-    #x_0 is the starting x position
-    #y_0 is the starting y position
-    #mins and maxs be where we don't want the stage to go past
+    #x_max, y_max be the top left corner, x_min, y_min be the lower right corner
+    #The maxs and mins span an area.
+    #(x_0, y_0) must lie within this grid and is the starting position of the beam.
+    #the beam will move right from where it starts from
+    #When it reaches the end, of the row (or x_0 = x_min) it will move down in y and back to x_0
     #delta is the spacing between points.
     
     if x_0 > x_max:
@@ -21,7 +23,7 @@ def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8
     
     
     
-    #This will make a tuple of 2-element tuples, which will be used as the coordinates of the beams location"
+    #This will make a list of 2-element tuples, which will be used as the coordinates of the beams location"
     ##########
     ##########
     
@@ -68,9 +70,16 @@ def func(x_0, y_0, x_max = 102, y_min = -65, x_min = -2, y_max = 37, delta = 1.8
         #sem.StgMoveTo(x, y)
         #sem.AutoWD
         #z = sem.GetWD
-        coords.remove(coords[i])
-        coords.insert(i, (x,y,round(z, 1)))
+        coords[i] = (x, y, round(z, 3))
         i = i+1
+    
+    
+    ##For loop is confusing.
+    #for pair in coords:
+    #    x,y = pair
+    #    z = np.add(x,y)
+    #    (x,y,z) = coords[pair]    #Will not accept pair as an argument bc it's defined as a tuple at start
+        
     
     return coords
 
