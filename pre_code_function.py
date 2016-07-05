@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.getcwd(), 'remote'))
 
 #import time
 
-#import sem
+import sem
 
 import struct
 
