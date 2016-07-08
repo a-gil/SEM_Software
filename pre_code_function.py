@@ -24,6 +24,10 @@ print('Start')
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+#args will hold the arguments for the functions. This is the format of the arguments:
+#args = [x_0, y_0, x_max, x_min, y_max, y_min, delta]
+#Edit the list below to use its arguments.
+args = [5, 35]
 
 def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
     """This function simply creates a rectangular area to scan over. """ \
@@ -92,12 +96,12 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
 ########################
 ########################
 
-def TakeImgs(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
+def TakeImgs(*args):
     """This function takes the coordinates calculated from calc_coords and feeds """\
     """them to the SEM. At each point, an image is taken. """\
     """CAUTION: please make sure to alter the max and min values if a custom stage is being used."""
     
-    coords = calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8)
+    coords = calc_coords(*args)
 
     #Now that we have the list, we can use it to assign the coordinates to the SEM
     ##########
@@ -124,6 +128,9 @@ def TakeImgs(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta =
         coords[i] = (x, y, round(z, 3))
         i = i+1
         
+        
+
+
 ##Hello?
 #Bruh, ay, ay Duval.
 ##Yeah, who this?
