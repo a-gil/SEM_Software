@@ -127,19 +127,3 @@ def TakeImgs(*args):
         
         coords[i] = (x, y, round(z, 3))
         i = i+1
-        
-        
-
-
-##Hello?
-#Bruh, ay, ay Duval.
-##Yeah, who this?
-#Bruh thi--Bruh this Fool, bruh.
-##Who?
-#Fool, bruh, you with my hoe bruh
-##I ain't with yo girl
-#Bruh y'all in Atlantic Station, bruh. Somebody just call me, bruh. Why--
-##What? What's yo girl name?
-#Bruh I love that hoe bruh, why you playin' wit my hoe, bruh?
-##What's her name?
-#Britney, nigga! What the fuck, you know that my hoe!
