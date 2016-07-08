@@ -1,52 +1,20 @@
 from __future__ import print_function
-
-#import pdb
-
-
-
 print('Start')
-
-
-
 import sys
-
 import os
-
 sys.path.append(os.path.join(os.getcwd(), 'remote'))
-
-
-
 import time
-
 import sem
-
 import struct
-
-import base64
-
+#import base64
 from sem_v3_lib import *
-
-
-
-from io import BytesIO
-
-import os
-
-#import pygame
-
-#from pygame.locals import *
-
-import msvcrt
-
-
-
-
+#from io import BytesIO
+#import msvcrt
+################################################################################
 
 print("So far so good.")
 
-
-
-SampleName = 'Stardust Track 191 Andromeda, 34 nm spot'
+SampleName = 'Sample Name Here'
 
 ImageWidth = 2000
 
@@ -62,7 +30,7 @@ DriftCorry = 0 # microns/frame
 
 DriftCorrz = 0 # microns/frame
 
-NumImages = 200
+NumImages = 1
 
 bpp = 16
 
@@ -72,26 +40,7 @@ CaptureSE = True
 
 CaptureBSE = True
 
-SEFileName = '%s, %dx%dx%d, %d bpp, little endian, SE.raw' % (SampleName, ImageWidth, ImageHeight, NumImages, bpp)
-
-BSEFileName = '%s, %dx%dx%d, %d bpp, little endian, BSE.raw' % (SampleName, ImageWidth, ImageHeight, NumImages, bpp)
-
-
-
-#
-
-# read SharkSEM message from data connection (callbacks)
-
-#
-
-# return:   (message name, message body)
-
-#
-
 def ReadMessage(conn):
-
-
-
     # receive the message header
 
     msg_name = conn._RecvStrD(16)
@@ -102,13 +51,12 @@ def ReadMessage(conn):
 
     body_size = v[0]
 
-    
+
 
     # get fn name
 
     cb_name = DecodeString(msg_name)
-
-                                
+                     
 
     # receive the body
 
@@ -138,11 +86,6 @@ def WriteImage(m):
 
         NumChannels += 1
 
-    #bio = BytesIO()
-
-
-
-    #pdb.set_trace()
 
     bytes_read = 0
 
@@ -150,43 +93,9 @@ def WriteImage(m):
 
     while bytes_read < ImageWidth*ImageHeight*bytesperpixel*NumChannels:
 
-
-
-        # If the user wants to cancel, then s/he will be holding down the escape button
-
-        if msvcrt.kbhit():
-
-            return
-
-#        keys = pygame.key.get_pressed()
-
-#        if keys[K_ESCAPE]:
-
-#            return
-
-        
-
-        #sprint("Read...")
-
         (cb_name, cb_body) = ReadMessage(m.connection)
 
-#        print(cb_name)
-
-
-
         v = struct.unpack("<IiIiI", cb_body[0:20])
-
-#        print("Frame: " + str(v[0]))
-
-#        print("Channel: " + str(v[1]))
-
-#        print("Index: " + str(v[2]))
-
-#        print("BPP: " + str(v[3]))
-
-#        print("Writing " + str(v[4]) + " bytes")
-
-        
 
         # Channel 0, write SE image.
 
@@ -196,8 +105,6 @@ def WriteImage(m):
 
             bytes_read = bytes_read + v[4]
 
-            #bio.write(cb_body[20:])
-
         # Channel 1, write BSE image.
 
         if v[1] == 1 and CaptureBSE == True:
@@ -205,14 +112,6 @@ def WriteImage(m):
             BSEfile.write(cb_body[20:])
 
             bytes_read = bytes_read + v[4]
-
-            #bio.write(cb_body[20:])
-
-
-
-        #print(".", end="")
-
-
 
         # When we are done, close the files.
 
@@ -226,15 +125,13 @@ def WriteImage(m):
 
                  BSEfile.close()
 
-        
-
-        #time.sleep(1)
+        time.sleep(1)
 
 
 
-#        im = Image.frombuffer("L", bytes_read, bio, "raw", "L", 0, 1)
+        im = Image.frombuffer("L", bytes_read, bio, "raw", "L", 0, 1)
 
-#        im.save(file_name + ".tif")
+        im.save(file_name + ".tif")
 
 
 
@@ -363,22 +260,6 @@ def main():
     # Loop through a bunch of images..
 
     for i in range(NumImages):
-
-
-
-        # If the user wants to cancel, then s/he will be holding down the escape button
-
-        if msvcrt.kbhit():
-
-            return
-
-#        keys = pygame.key.get_pressed()
-
-#        if keys[K_ESCAPE]:
-
-#            return
-
-
 
         # Apply drift correction
 
