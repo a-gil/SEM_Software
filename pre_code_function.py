@@ -7,57 +7,43 @@ sys.path.append(os.path.join(os.getcwd(), 'remote'))
 import time
 import sem
 import struct
-#import base64
 from sem_v3_lib import *
-#from io import BytesIO
-#import msvcrt
-#import numpy as np
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-print("So far so good.")
-
+print("Connection Established.")
 SampleName = 'none'
-
 ImageWidth = 512
-
 ImageHeight = 512
-
 NumImages = 1
-
 bpp = 16
-
-ScanSpeed = 2
-
+ScanSpeed = 7
 CaptureSE = True
-
 CaptureBSE = False
-
 
 #Connect to the SEM SharkSEM interface.
 m = sem.Sem()
 conn = m.Connect('localhost', 8300)
 
-
+#read SharkSEM message from data connection (callbacks)
 def ReadMessage(conn):
-    # receive the message header
+    #receive the message header
     msg_name = conn._RecvStrD(16)
     hdr = conn._RecvStrD(16)
     v = struct.unpack("<IIHHI", hdr)
     body_size = v[0]
 
-    # get fn name
+    #get fn name
     cb_name = DecodeString(msg_name)
                    
-    # receive the body
+    #receive the body
     cb_body = conn._RecvStrD(body_size)
 
-    # finished reading message
+    #finished reading message
     return (cb_name, cb_body)
 
 
 def WriteImage(m):
-
     NumChannels = 0
 
     if CaptureSE == True:
@@ -77,25 +63,23 @@ def WriteImage(m):
         (cb_name, cb_body) = ReadMessage(m.connection)
         v = struct.unpack("<IiIiI", cb_body[0:20])
 
-        # Channel 0, write SE image.
+        #Channel 0, write SE image.
         if v[1] == 0 and CaptureSE == True:
             SEfile.write(cb_body[20:])
             bytes_read = bytes_read + v[4]
 
-        # Channel 1, write BSE image.
+        #Channel 1, write BSE image.
         if v[1] == 1 and CaptureBSE == True:
             BSEfile.write(cb_body[20:])
             bytes_read = bytes_read + v[4]
 
-        # When we are done, close the files.
+        #When we are done, close the files.
         if bytes_read >= ImageWidth*ImageHeight*bytesperpixel*NumChannels:        
             if CaptureSE == True:
                  SEfile.close()
 
             if CaptureBSE == True:
                  BSEfile.close()
-
-        time.sleep(1)
 
 def main(x, y):
     global SEFileName
@@ -107,8 +91,8 @@ def main(x, y):
 
 
     ViewField = m.GetViewField()*1000 # View field in microns.
-    Voltage = m.HVGetVoltage()/1000; # Voltage in keV.
-
+    Voltage = m.HVGetVoltage()/1000 # Voltage in keV.
+    WD = m.GetWD()
 
     SEFileName = '(' + str(x) + ', ' + str(y) + ') ' + '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian,SE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
     #BSEFileName = '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
@@ -117,7 +101,6 @@ def main(x, y):
     #Assign SE to channel 0 and BSE to channel 1.
     m.DtSelect(0, 0)
     m.DtSelect(1, 1)
-
 
     #Enable each, 8 or 16 bits/pixel.
     if CaptureSE == True:
@@ -135,50 +118,33 @@ def main(x, y):
     m.ScSetSpeed(ScanSpeed)
 
     
-    #move SEM to that location
+    #move beam to that location
     m.StgMoveTo(x, y)
-        
-    time.sleep(5)
+    time.sleep(3)
         
     #Autofocus on that point        
     m.AutoWD(0)
-    
-    
     time.sleep(40)
 
 
-    for i in range(NumImages):
-        # Take an image.
-        print("Scanning image# " + str(i))
-        time.sleep(1)
-
-        res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
-        
-        # Let the image come in as it is acquired and then write it.
-        WriteImage(m)
-
-        print("\n\n")
-        
-    print("\n\n")
-
+    #Take an image.
+    res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
+    print("Scanning image #1")
     time.sleep(1)
 
-#    if CaptureSE == True:
-#        print("\n" + str(i+1) + " images written to " + SEFileName)
-#
-#    if CaptureBSE == True:
-#        print("\n" + str(i+1) + " images written to " + BSEFileName)
-
+    #Let the image come in as it is acquired and then write it.
+    WriteImage(m)
+        
+    print("\n\n")
+    time.sleep(1)
     print('Done')
-    
-    return
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #args will hold the arguments for the functions. This is the format of the arguments:
 #args = [x_0, y_0, x_max, x_min, y_max, y_min, delta]
 #Edit the list below to use its arguments.
-args = [0, 35]
+args = [-1, 36]
 
 def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
     """This function simply creates a rectangular area to scan over. """ \
