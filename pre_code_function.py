@@ -222,13 +222,20 @@ def TakeImgs(*args):
     while j < len(coords):
         x, y = coords[j]
         
-        ##move SEM to that location
-        #m.StgMoveTo(x, y)
-        #
-        ##Autofocus on that point        
-        #m.AutoWD(0)
+        #move SEM to that location
+        m.StgMoveTo(x, y)
+        
+        #Autofocus on that point        
+        m.AutoWD(0)
+        
+        #save value of autowd into variable z
+        z = m.GetWD()
+        
+        #add z value to the list of coordinates calculated
+        coords.remove(coords[j])
+        coords.insert(j, (x, y, round(z, 1)))
         
         #call main function at coordinates
-        main(x, y)
+        #main(x, y)
         
         j = j+1
