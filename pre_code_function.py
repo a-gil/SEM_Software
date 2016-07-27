@@ -17,7 +17,7 @@ ImageWidth = 512
 ImageHeight = 512
 NumImages = 1
 bpp = 16
-ScanSpeed = 7
+ScanSpeed = 6
 CaptureSE = True
 CaptureBSE = False
 
@@ -81,7 +81,7 @@ def WriteImage(m):
             if CaptureBSE == True:
                  BSEfile.close()
 
-def TakeImgs(x, y):
+def TakeImgs(*args):
     global SEFileName
     global BSEFileName
     
@@ -89,51 +89,54 @@ def TakeImgs(x, y):
         print("Error: Unable to connect to SEM")
         return
 
+    coords = FindWD(*args)
+    
+    print(coords)
 
     ViewField = m.GetViewField()*1000 # View field in microns.
     Voltage = m.HVGetVoltage()/1000 # Voltage in keV.
-    WD = m.GetWD()
-
-    SEFileName = '(' + str(x) + ', ' + str(y) + ') ' + '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian,SE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
-    #BSEFileName = '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
-
-
-#    #Assign SE to channel 0 and BSE to channel 1.
-#    m.DtSelect(0, 0)
-#    m.DtSelect(1, 1)
-#
-#    #Enable each, 8 or 16 bits/pixel.
-#    if CaptureSE == True:
-#        m.DtEnable(0, 1, bpp)
-#    else:
-#        m.DtEnable(0, 0)
-#    if CaptureBSE == True:
-#        m.DtEnable(1, 1, bpp)
-#    else:
-#        m.DtEnable(1, 0)
-
-
-    # make sure scanning is inactive
-    m.ScStopScan()
-    m.ScSetSpeed(ScanSpeed)
-
     
-#    #move beam to that location
-#    m.StgMoveTo(x, y)
-#    time.sleep(3)
-#        
-#    #Autofocus on that point        
-#    m.AutoWD(0)
-#    time.sleep(40)
-
-
-    #Take an image.
-    res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
-    print("Scanning image #1")
-    time.sleep(1)
-
-    #Let the image come in as it is acquired and then write it.
-    WriteImage(m)
+    k = 0
+    while k < len(coords):
+        (x, y, z) = coords[k]
+        SEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian,SE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
+        #BSEFileName = '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
+    
+    
+    #    #Assign SE to channel 0 and BSE to channel 1.
+    #    m.DtSelect(0, 0)
+    #    m.DtSelect(1, 1)
+    #
+    #    #Enable each, 8 or 16 bits/pixel.
+    #    if CaptureSE == True:
+    #        m.DtEnable(0, 1, bpp)
+    #    else:
+    #        m.DtEnable(0, 0)
+    #    if CaptureBSE == True:
+    #        m.DtEnable(1, 1, bpp)
+    #    else:
+    #        m.DtEnable(1, 0)
+    
+    
+        # make sure scanning is inactive
+        m.ScStopScan()
+        m.ScSetSpeed(ScanSpeed)
+    
+        
+        #move beam to that location
+        m.StgMoveTo(x, y, z)
+        time.sleep(5)
+    
+    
+        #Take an image.
+        res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
+        print("Scanning image #1")
+        time.sleep(1)
+    
+        #Let the image come in as it is acquired and then write it.
+        WriteImage(m)
+        
+        k = k + 1
         
     print("\n\n")
     time.sleep(1)
@@ -197,7 +200,7 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
        #add the calculated x_n, y_m to the list coord         
         coords = coords + [(round(x_n, 1), round(y_m, 1)),]
         
-       #break the loop when we reach the bottom corner                 
+       #break the loop when we reach the top left corner                 
         if y_m == y_max and x_n == x_min:
             break
     
@@ -207,16 +210,10 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
 
 def FindWD(*args):
     """This function takes the coordinates calculated from calc_coords and feeds """\
-    """them to the SEM. At each point, an image is taken. """\
+    """them to the SEM. At each point, the working distance is calculated """\
     """CAUTION: please make sure to alter the max and min values if a custom stage is being used."""
 
-    coords = calc_coords(*args)
 
-    #Now that we have the list, we can use it to assign the coordinates to the SEM
-    ##########
-    ##########
-    
-    
     #Assign SE to channel 0 and BSE to channel 1.
     m.DtSelect(0, 0)
     m.DtSelect(1, 1)
@@ -230,8 +227,11 @@ def FindWD(*args):
         m.DtEnable(1, 1, bpp)
     else:
         m.DtEnable(1, 0)
-    
-    
+
+    global coords
+    coords = calc_coords(*args)
+        
+    #Now that we have the list, we can use it to assign the coordinates to the SEM    
     #define a certain magical index
     j = 0
     while j < len(coords):
@@ -243,7 +243,7 @@ def FindWD(*args):
         
         #Autofocus on that point        
         m.AutoWD(0)
-        time.sleep(35)
+        time.sleep(25)
         
         #save value of autowd into variable z
         z = m.GetWD()
@@ -256,3 +256,4 @@ def FindWD(*args):
         #TakeImgs(x, y)
         
         j = j+1
+    return coords
