@@ -81,7 +81,7 @@ def WriteImage(m):
             if CaptureBSE == True:
                  BSEfile.close()
 
-def main(x, y):
+def TakeImgs(x, y):
     global SEFileName
     global BSEFileName
     
@@ -98,19 +98,19 @@ def main(x, y):
     #BSEFileName = '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
 
 
-    #Assign SE to channel 0 and BSE to channel 1.
-    m.DtSelect(0, 0)
-    m.DtSelect(1, 1)
-
-    #Enable each, 8 or 16 bits/pixel.
-    if CaptureSE == True:
-        m.DtEnable(0, 1, bpp)
-    else:
-        m.DtEnable(0, 0)
-    if CaptureBSE == True:
-        m.DtEnable(1, 1, bpp)
-    else:
-        m.DtEnable(1, 0)
+#    #Assign SE to channel 0 and BSE to channel 1.
+#    m.DtSelect(0, 0)
+#    m.DtSelect(1, 1)
+#
+#    #Enable each, 8 or 16 bits/pixel.
+#    if CaptureSE == True:
+#        m.DtEnable(0, 1, bpp)
+#    else:
+#        m.DtEnable(0, 0)
+#    if CaptureBSE == True:
+#        m.DtEnable(1, 1, bpp)
+#    else:
+#        m.DtEnable(1, 0)
 
 
     # make sure scanning is inactive
@@ -118,13 +118,13 @@ def main(x, y):
     m.ScSetSpeed(ScanSpeed)
 
     
-    #move beam to that location
-    m.StgMoveTo(x, y)
-    time.sleep(3)
-        
-    #Autofocus on that point        
-    m.AutoWD(0)
-    time.sleep(40)
+#    #move beam to that location
+#    m.StgMoveTo(x, y)
+#    time.sleep(3)
+#        
+#    #Autofocus on that point        
+#    m.AutoWD(0)
+#    time.sleep(40)
 
 
     #Take an image.
@@ -205,7 +205,7 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
     
     
 
-def TakeImgs(*args):
+def FindWD(*args):
     """This function takes the coordinates calculated from calc_coords and feeds """\
     """them to the SEM. At each point, an image is taken. """\
     """CAUTION: please make sure to alter the max and min values if a custom stage is being used."""
@@ -217,6 +217,21 @@ def TakeImgs(*args):
     ##########
     
     
+    #Assign SE to channel 0 and BSE to channel 1.
+    m.DtSelect(0, 0)
+    m.DtSelect(1, 1)
+
+    #Enable each, 8 or 16 bits/pixel.
+    if CaptureSE == True:
+        m.DtEnable(0, 1, bpp)
+    else:
+        m.DtEnable(0, 0)
+    if CaptureBSE == True:
+        m.DtEnable(1, 1, bpp)
+    else:
+        m.DtEnable(1, 0)
+    
+    
     #define a certain magical index
     j = 0
     while j < len(coords):
@@ -224,9 +239,11 @@ def TakeImgs(*args):
         
         #move SEM to that location
         m.StgMoveTo(x, y)
+        time.sleep(3)
         
         #Autofocus on that point        
         m.AutoWD(0)
+        time.sleep(35)
         
         #save value of autowd into variable z
         z = m.GetWD()
@@ -236,6 +253,6 @@ def TakeImgs(*args):
         coords.insert(j, (x, y, round(z, 1)))
         
         #call main function at coordinates
-        #main(x, y)
+        #TakeImgs(x, y)
         
         j = j+1
