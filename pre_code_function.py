@@ -9,21 +9,49 @@ import sem
 import struct
 from sem_v3_lib import *
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-print("Connection Established.")
-SampleName = 'none'
-ImageWidth = 512
-ImageHeight = 512
-NumImages = 1
-bpp = 16
-ScanSpeed = 6
-CaptureSE = True
-CaptureBSE = False
-
 #Connect to the SEM SharkSEM interface.
 m = sem.Sem()
 conn = m.Connect('localhost', 8300)
+print("Connection Established.")
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+####important variables to change
+
+#file name properties
+SampleName = 'none'
+
+#Image properties
+ImageWidth = 512
+ImageHeight = 512
+bpp = 16
+
+#SEM properties
+ScanSpeed = 6
+CaptureSE = True
+CaptureBSE = False
+z_min = 15
+z_max = 35
+
+#Initial values
+
+#z_0 is measured manually. We first aim for an initial working distance WD_0 of 25 mm.
+#We then move WD&z to this WD, and this gives us z_0 and WD_0
+WD_0 = 25
+z_0 = m.StgGetPosition()[2]
+
+
+#args will hold the arguments for the functions. This is the format of the arguments:
+#args = [x_0, y_0, x_max, x_min, y_max, y_min, delta]
+#Typically should be used as the starting point of the scan
+#but can also be used as a way to change parameters of calc_coords or FindWD
+args = [-1, 36]
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 #read SharkSEM message from data connection (callbacks)
 def ReadMessage(conn):
@@ -99,8 +127,8 @@ def TakeImgs(*args):
     k = 0
     while k < len(coords):
         (x, y, z) = coords[k]
-        SEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian,SE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
-        #BSEFileName = '%s, %d keV, %dx%dx%d, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, NumImages, ViewField, bpp)
+        SEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
+        BSEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
     
     
     #    #Assign SE to channel 0 and BSE to channel 1.
@@ -124,13 +152,13 @@ def TakeImgs(*args):
     
         
         #move beam to that location
-        m.StgMoveTo(x, y, z)
+        m.StgMoveTo(x, y, z_n)
         time.sleep(5)
     
     
         #Take an image.
         res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
-        print("Scanning image #1")
+        print('Scanning image at' + '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' )
         time.sleep(1)
     
         #Let the image come in as it is acquired and then write it.
@@ -143,11 +171,6 @@ def TakeImgs(*args):
     print('Done')
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-#args will hold the arguments for the functions. This is the format of the arguments:
-#args = [x_0, y_0, x_max, x_min, y_max, y_min, delta]
-#Edit the list below to use its arguments.
-args = [-1, 36]
 
 def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
     """This function simply creates a rectangular area to scan over. """ \
@@ -168,21 +191,20 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
         return 'Error: input y must be larger'
     
     
-    
 #The following makes a list of 2-element tuples
 #and they will be used as the coordinates of the beam's location
     
-   #dummy variable, may be removed if we make the sub while-->for    
+    #dummy variable, might be removed if we make the sub while-->for    
     x_n = x_min + 1
     
-   #empty list where we'll store the coordinates 
+    #empty list where we'll store the coordinates 
     coords = []
     
-   #define indices         
+    #define indices         
     n = 0
     m = 0
     
-   #"dummy variable" used to get the while loop started 
+    #"dummy variable" used to get the while loop started 
     while x_n >= x_min:                         
                     
         x_n = x_0 - n*delta                 #new x posistion
@@ -197,20 +219,21 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
         if y_m > y_max:                     #place a bound on the y value
             y_m = y_max           
                 
-       #add the calculated x_n, y_m to the list coord         
+        #add the calculated x_n, y_m to the list coord         
         coords = coords + [(round(x_n, 1), round(y_m, 1)),]
         
-       #break the loop when we reach the top left corner                 
+        #break the loop when we reach the top left corner                 
         if y_m == y_max and x_n == x_min:
             break
     
     return coords
-    
-    
+
+
 
 def FindWD(*args):
     """This function takes the coordinates calculated from calc_coords and feeds """\
-    """them to the SEM. At each point, the working distance is calculated """\
+    """them to the SEM. At each point, the working distance is calculated and used to find """\
+    """the sample height"""
     """CAUTION: please make sure to alter the max and min values if a custom stage is being used."""
 
 
@@ -228,7 +251,7 @@ def FindWD(*args):
     else:
         m.DtEnable(1, 0)
 
-    global coords
+    #global coords
     coords = calc_coords(*args)
         
     #Now that we have the list, we can use it to assign the coordinates to the SEM    
@@ -245,15 +268,25 @@ def FindWD(*args):
         m.AutoWD(0)
         time.sleep(25)
         
-        #save value of autowd into variable z
-        z = m.GetWD()
+        #save value of the autoWD into a variable to get sample height
+        WD_n = m.GetWD()
+        
+        #Find sample height by using a bit of math.
+        z_n = z_0 + (WD_0 - WD_n)
+        
+        #set limiting values for possible stage z-position to avoid collisions
+        if z_n < z_min:
+            print('z_n value dropped below safe zone and has been changed to border it')
+            z_n = z_min
+        if z_n > z_max:
+            print('z_n value has gone too far from the WD and has been changed to border it')
+            z_n = z_max
+        
         
         #add z value to the list of coordinates calculated
         coords.remove(coords[j])
-        coords.insert(j, (x, y, round(z, 1)))
-        
-        #call main function at coordinates
-        #TakeImgs(x, y)
+        coords.insert(j, (x, y, round(z_n, 1)))
         
         j = j+1
+        
     return coords
