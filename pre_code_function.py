@@ -8,6 +8,9 @@ import time
 import sem
 import struct
 from sem_v3_lib import *
+import numpy as np
+from scipy import misc
+
 
 #Connect to the SEM SharkSEM interface.
 m = sem.Sem()
@@ -38,8 +41,9 @@ z_max = 35
 #Initial values
 
 #z_0 is measured manually. We first aim for an initial working distance WD_0 of 25 mm.
+#For testing purposes, WD_0 is set for 30 mm
 #We then move WD&z to this WD, and this gives us z_0 and WD_0
-WD_0 = 25
+WD_0 = 30
 z_0 = m.StgGetPosition()[2]
 
 
@@ -75,11 +79,11 @@ def WriteImage(m):
     NumChannels = 0
 
     if CaptureSE == True:
-        SEfile = open(SEFileName, "ab")
+        SEfile = open(RawSEFileName, "ab")
         NumChannels += 1
 
     if CaptureBSE == True:
-        BSEfile = open(BSEFileName, "ab")
+        BSEfile = open(RawBSEFileName, "ab")
         NumChannels += 1
 
 
@@ -110,8 +114,12 @@ def WriteImage(m):
                  BSEfile.close()
 
 def TakeImgs(*args):
-    global SEFileName
-    global BSEFileName
+    #global SEFileName
+    #global BSEFileName
+    global raw
+    global tiff
+    global RawSEFileName
+    global RawBSEFileName
     
     if conn<0:
         print("Error: Unable to connect to SEM")
@@ -127,9 +135,13 @@ def TakeImgs(*args):
     k = 0
     while k < len(coords):
         (x, y, z) = coords[k]
-        SEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
-        BSEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE.raw' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
-    
+        
+        raw = '.raw'
+        tiff = '.tiff'
+        SEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
+        BSEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
+        RawSEFileName = SEFileName + raw
+        RawBSEFileName = BSEFileName + raw
     
     #    #Assign SE to channel 0 and BSE to channel 1.
     #    m.DtSelect(0, 0)
@@ -152,17 +164,28 @@ def TakeImgs(*args):
     
         
         #move beam to that location
-        m.StgMoveTo(x, y, z_n)
+        m.StgMoveTo(x, y, z)
         time.sleep(5)
     
     
         #Take an image.
-        res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
         print('Scanning image at' + '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' )
+        res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
         time.sleep(1)
     
         #Let the image come in as it is acquired and then write it.
         WriteImage(m)
+        
+        #Convert the image into a .tiff file
+        if CaptureSE == True:
+            SEImage = np.fromfile(RawSEFileName, dtype=np.uint16)
+            SEImage.shape = (ImageWidth, ImageHeight)
+            misc.imsave(SEFileName + tiff, SEImage)
+        
+        if CaptureBSE == True:
+            BSEImage = np.fromfile(RawBSEFileName, dtype=np.uint16)
+            BSEImage.shape = (ImageWidth, ImageHeight)
+            misc.imsave(BSEFileName + tiff, BSEImage)
         
         k = k + 1
         
@@ -264,6 +287,9 @@ def FindWD(*args):
         m.StgMoveTo(x, y)
         time.sleep(3)
         
+        #stop scanning to find WD
+        m.ScStopScan()
+        
         #Autofocus on that point        
         m.AutoWD(0)
         time.sleep(25)
@@ -273,14 +299,17 @@ def FindWD(*args):
         
         #Find sample height by using a bit of math.
         z_n = z_0 + (WD_0 - WD_n)
+        print(z_n)
         
         #set limiting values for possible stage z-position to avoid collisions
         if z_n < z_min:
-            print('z_n value dropped below safe zone and has been changed to border it')
+            print('z_n value dropped below safe zone and has been changed to border it at z_n = ')
             z_n = z_min
+            print(z_n)
         if z_n > z_max:
-            print('z_n value has gone too far from the WD and has been changed to border it')
+            print('z_n value has gone too far from the WD and has been changed to border it at z_n = ')
             z_n = z_max
+            print(z_n)
         
         
         #add z value to the list of coordinates calculated
