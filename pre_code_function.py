@@ -32,11 +32,11 @@ ImageHeight = 512
 bpp = 16
 
 #SEM properties
-ScanSpeed = 6
+ScanSpeed = 7
 CaptureSE = True
 CaptureBSE = False
 z_min = 15
-z_max = 35
+z_max = 40
 
 #Initial values
 
@@ -162,6 +162,8 @@ def TakeImgs(*args):
         m.ScStopScan()
         m.ScSetSpeed(ScanSpeed)
     
+        #Set Scan Mode to Depth
+        m.SMSetMode(1)
         
         #move beam to that location
         m.StgMoveTo(x, y, z)
@@ -273,6 +275,9 @@ def FindWD(*args):
         m.DtEnable(1, 1, bpp)
     else:
         m.DtEnable(1, 0)
+        
+    #switch scan mode to Resolution
+    m.SMSetMode(0)
 
     #global coords
     coords = calc_coords(*args)
