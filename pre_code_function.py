@@ -114,8 +114,6 @@ def WriteImage(m):
                  BSEfile.close()
 
 def TakeImgs(*args):
-    #global SEFileName
-    #global BSEFileName
     global raw
     global tiff
     global RawSEFileName
@@ -142,20 +140,6 @@ def TakeImgs(*args):
         BSEFileName = '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' + '%s, %d keV, %dx%dx, %g um wide, %d bpp, little endian, BSE' % (SampleName, Voltage, ImageWidth, ImageHeight, ViewField, bpp)
         RawSEFileName = SEFileName + raw
         RawBSEFileName = BSEFileName + raw
-    
-    #    #Assign SE to channel 0 and BSE to channel 1.
-    #    m.DtSelect(0, 0)
-    #    m.DtSelect(1, 1)
-    #
-    #    #Enable each, 8 or 16 bits/pixel.
-    #    if CaptureSE == True:
-    #        m.DtEnable(0, 1, bpp)
-    #    else:
-    #        m.DtEnable(0, 0)
-    #    if CaptureBSE == True:
-    #        m.DtEnable(1, 1, bpp)
-    #    else:
-    #        m.DtEnable(1, 0)
     
     
         # make sure scanning is inactive
