@@ -11,6 +11,19 @@ csvFilename = 'coordinates.csv'
     
 with open('coordinates.csv', 'rb') as f:
     reader = csv.reader(f)
+    
+    #make a list of the csv file
     your_list = list(reader)
     
-ast.literal_eval(flattened[0])
+    #Remove nested list
+    your_list = your_list[0]
+
+l = 0
+while l < len(your_list):
+    print(your_list[l])
+    values = ast.literal_eval(your_list[l])
+    your_list.remove(your_list[l])
+    your_list.insert(l, values)
+    print(your_list[l])
+    
+    l = l+1
