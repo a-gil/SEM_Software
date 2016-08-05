@@ -10,6 +10,8 @@ import struct
 from sem_v3_lib import *
 import numpy as np
 from scipy import misc
+import csv
+import ast
 
 
 #Connect to the SEM SharkSEM interface.
@@ -27,23 +29,23 @@ print("Connection Established.")
 SampleName = 'none'
 
 #Image properties
-ImageWidth = 512
-ImageHeight = 512
+ImageWidth = 1024
+ImageHeight = 1024
 bpp = 16
 
 #SEM properties
 ScanSpeed = 7
-CaptureSE = True
-CaptureBSE = False
+CaptureSE = False
+CaptureBSE = True
 z_min = 15
 z_max = 40
 
 #Initial values
 
 #z_0 is measured manually. We first aim for an initial working distance WD_0 of 25 mm.
-#For testing purposes, WD_0 is set for 30 mm
+#For testing purposes, WD_0 is set to 30 mm
 #We then move WD&z to this WD, and this gives us z_0 and WD_0
-WD_0 = 30
+WD_0 = 25
 z_0 = m.StgGetPosition()[2]
 
 
@@ -78,9 +80,9 @@ def ReadMessage(conn):
 def WriteImage(m):
     NumChannels = 0
 
-    if CaptureSE == True:
-        SEfile = open(RawSEFileName, "ab")
-        NumChannels += 1
+    #if CaptureSE == True:
+    #    SEfile = open(RawSEFileName, "ab")
+    #    NumChannels += 1
 
     if CaptureBSE == True:
         BSEfile = open(RawBSEFileName, "ab")
@@ -96,9 +98,9 @@ def WriteImage(m):
         v = struct.unpack("<IiIiI", cb_body[0:20])
 
         #Channel 0, write SE image.
-        if v[1] == 0 and CaptureSE == True:
-            SEfile.write(cb_body[20:])
-            bytes_read = bytes_read + v[4]
+        #if v[1] == 0 and CaptureSE == True:
+        #    SEfile.write(cb_body[20:])
+        #    bytes_read = bytes_read + v[4]
 
         #Channel 1, write BSE image.
         if v[1] == 1 and CaptureBSE == True:
@@ -107,13 +109,13 @@ def WriteImage(m):
 
         #When we are done, close the files.
         if bytes_read >= ImageWidth*ImageHeight*bytesperpixel*NumChannels:        
-            if CaptureSE == True:
-                 SEfile.close()
+            #if CaptureSE == True:
+            #     SEfile.close()
 
             if CaptureBSE == True:
                  BSEfile.close()
 
-def TakeImgs(*args):
+def TakeImgs():
     global raw
     global tiff
     global RawSEFileName
@@ -122,10 +124,27 @@ def TakeImgs(*args):
     if conn<0:
         print("Error: Unable to connect to SEM")
         return
-
-    coords = FindWD(*args)
     
-    print(coords)
+    with open('coordinates.csv', 'rb') as f:
+        reader = csv.reader(f)
+    
+        #make a list of the csv file
+        coords = list(reader)
+    
+        #Remove nested list
+        coords = coords[0]
+
+    l = 0
+    while l < len(coords):
+        values = ast.literal_eval(coords[l])
+        coords.remove(coords[l])
+        coords.insert(l, values)
+        #print(your_list[l])
+        l = l + 1
+    
+    #coords = FindWD(*args)
+    
+    #print(coords)
 
     ViewField = m.GetViewField()*1000 # View field in microns.
     Voltage = m.HVGetVoltage()/1000 # Voltage in keV.
@@ -141,7 +160,20 @@ def TakeImgs(*args):
         RawSEFileName = SEFileName + raw
         RawBSEFileName = BSEFileName + raw
     
+        #Assign SE to channel 0 and BSE to channel 1.
+        m.DtSelect(0, 0)
+        m.DtSelect(1, 1)
     
+        #Enable each, 8 or 16 bits/pixel.
+        if CaptureSE == True:
+            m.DtEnable(0, 1, bpp)
+        else:
+            m.DtEnable(0, 0)
+        if CaptureBSE == True:
+            m.DtEnable(1, 1, bpp)
+        else:
+            m.DtEnable(1, 0)    
+        
         # make sure scanning is inactive
         m.ScStopScan()
         m.ScSetSpeed(ScanSpeed)
@@ -155,7 +187,7 @@ def TakeImgs(*args):
     
     
         #Take an image.
-        print('Scanning image at' + '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' )
+        print('Scanning image at ' + '(' + str(x) + ', ' + str(y) + ', ' + str(z) + ') ' )
         res = m.ScScanXY(1, ImageWidth, ImageHeight, 0, 0, ImageWidth-1, ImageHeight-1, 1)
         time.sleep(1)
     
@@ -163,10 +195,10 @@ def TakeImgs(*args):
         WriteImage(m)
         
         #Convert the image into a .tiff file
-        if CaptureSE == True:
-            SEImage = np.fromfile(RawSEFileName, dtype=np.uint16)
-            SEImage.shape = (ImageWidth, ImageHeight)
-            misc.imsave(SEFileName + tiff, SEImage)
+        #if CaptureSE == True:
+        #    SEImage = np.fromfile(RawSEFileName, dtype=np.uint16)
+        #    SEImage.shape = (ImageWidth, ImageHeight)
+        #    misc.imsave(SEFileName + tiff, SEImage)
         
         if CaptureBSE == True:
             BSEImage = np.fromfile(RawBSEFileName, dtype=np.uint16)
@@ -181,7 +213,7 @@ def TakeImgs(*args):
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 1.8):
+def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delta = 2):
     """This function simply creates a rectangular area to scan over. """ \
     """The min and max values are ideally where the stage touches the chamber walls. """\
     """x_0 and y_0 must lie within this area. This function will move the electron """\
@@ -215,23 +247,33 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
     
     #"dummy variable" used to get the while loop started 
     while x_n >= x_min:                         
-                    
-        x_n = x_0 - n*delta                 #new x posistion
-        y_m = y_0 + m*delta                 #new y position
+        
+        #new x position
+        x_n = x_0 - n*delta
+        
+        #new y position
+        y_m = y_0 + m*delta
+        
         n = n+1
-                                    
-        if x_n < x_min:                     #once we reach x_min, set x = x_min
-            x_n = x_min               
-            n = 0                           #reset n index when we reach the end
-            m = m + 1                       #increase m index by 1 to change y_m
-                    
-        if y_m > y_max:                     #place a bound on the y value
+        
+        #minimum bound on x value
+        if x_n < x_min:
+            x_n = x_min  
+
+            #reset n index when we reach the end of the row
+            n = 0
+            
+            #increase m index by 1 to move up in y
+            m = m + 1
+        
+        #upper bound on y value
+        if y_m > y_max:
             y_m = y_max           
                 
         #add the calculated x_n, y_m to the list coord         
         coords = coords + [(round(x_n, 1), round(y_m, 1)),]
         
-        #break the loop when we reach the top left corner                 
+        #break the loop when we reach the top left corner of area                
         if y_m == y_max and x_n == x_min:
             break
     
@@ -239,7 +281,7 @@ def calc_coords(x_0, y_0, x_max = 102, x_min = -2, y_max = 37, y_min = -65, delt
 
 
 
-def FindWD(*args):
+def FocusMap(*args):
     """This function takes the coordinates calculated from calc_coords and feeds """\
     """them to the SEM. At each point, the working distance is calculated and used to find """\
     """the sample height"""
@@ -303,8 +345,15 @@ def FindWD(*args):
         
         #add z value to the list of coordinates calculated
         coords.remove(coords[j])
-        coords.insert(j, (x, y, round(z_n, 1)))
+        coords.insert(j, (x, y, round(z_n, 2)))
         
         j = j+1
-        
-    return coords
+    
+    csvFilename = 'coordinates.csv'
+    with open(csvFilename, 'wb') as myfile:
+        wr = csv.writer(myfile)
+        wr.writerow(coords)
+    
+    print('coordinates.csv has been created')
+    
+    return
