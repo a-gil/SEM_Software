@@ -34,7 +34,7 @@ ImageHeight = 1024
 bpp = 16
 
 #SEM properties
-ScanSpeed = 7
+ScanSpeed = 5
 CaptureSE = False
 CaptureBSE = True
 z_min = 15
@@ -45,7 +45,7 @@ z_max = 40
 #z_0 is measured manually. We first aim for an initial working distance WD_0 of 25 mm.
 #For testing purposes, WD_0 is set to 30 mm
 #We then move WD&z to this WD, and this gives us z_0 and WD_0
-WD_0 = 25
+WD_0 = m.GetWD()
 z_0 = m.StgGetPosition()[2]
 
 
@@ -125,6 +125,11 @@ def TakeImgs():
         print("Error: Unable to connect to SEM")
         return
     
+    
+    m.SetWD(25.0)
+    m.SetViewField(2.048)
+    
+    
     with open('coordinates.csv', 'rb') as f:
         reader = csv.reader(f)
     
@@ -183,7 +188,10 @@ def TakeImgs():
         
         #move beam to that location
         m.StgMoveTo(x, y, z)
-        time.sleep(5)
+        if k == 0:
+            time.sleep(30)
+        else:
+            time.sleep(5)
     
     
         #Take an image.
@@ -316,7 +324,10 @@ def FocusMap(*args):
         
         #move SEM to that location
         m.StgMoveTo(x, y)
-        time.sleep(3)
+        if j == 0:
+            time.sleep(30)
+        else:
+            time.sleep(3)
         
         #stop scanning to find WD
         m.ScStopScan()
@@ -324,7 +335,7 @@ def FocusMap(*args):
         #Autofocus on that point        
         m.AutoWD(0)
         time.sleep(25)
-        
+
         #save value of the autoWD into a variable to get sample height
         WD_n = m.GetWD()
         
